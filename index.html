@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DarkLivros - Livraria Digital</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+body { background: #000; color: #fff; }
+
+/* HEADER */
+header {
+  background: #0a0a0a; border-bottom: 2px solid #8b0000;
+  padding: 18px 40px; display: flex; justify-content: space-between;
+  align-items: center; position: sticky; top: 0; z-index: 100;
+}
+.logo { font-size: 26px; font-weight: bold; cursor: pointer; font-family: Georgia, serif; }
+.logo b { color: #c0392b; }
+.header-right { display: flex; gap: 12px; }
+.btn {
+  background: #c0392b; color: #fff; border: none;
+  padding: 11px 20px; border-radius: 4px; cursor: pointer;
+  font-size: 13px; font-weight: bold; letter-spacing: 1px;
+  text-transform: uppercase; transition: 0.3s;
+}
+.btn:hover { background: #e74c3c; }
+.btn-admin { background: #333; }
+.btn-admin:hover { background: #555; }
+.btn-verde { background: #27ae60; }
+.btn-verde:hover { background: #219150; }
+
+/* CATEGORIAS */
+.categorias {
+  background: #0a0a0a; padding: 16px 40px;
+  display: flex; gap: 12px; overflow-x: auto;
+  border-bottom: 1px solid #1a1a1a;
+}
+.cat-btn {
+  background: transparent; color: #bbb; border: 1px solid #333;
+  padding: 8px 18px; border-radius: 20px; cursor: pointer;
+  font-size: 13px; white-space: nowrap; transition: 0.3s;
+}
+.cat-btn:hover { color: #fff; border-color: #c0392b; }
+.cat-btn.ativo { background: #c0392b; color: #fff; border-color: #c0392b; }
+
+/* BANNER */
+.banner {
+  padding: 70px 40px; text-align: center;
+  background: radial-gradient(circle at center, #1a0000 0%, #000 70%);
+  border-bottom: 1px solid #1a1a1a;
+}
+.banner h1 { font-size: 46px; font-weight: normal; letter-spacing: 3px; margin-bottom: 15px; font-family: Georgia, serif; }
+.banner h1 i { color: #c0392b; }
+.banner p { color: #999; font-size: 16px; letter-spacing: 1px; }
+
+/* TÍTULO */
+.titulo-secao {
+  text-align: center; padding: 50px 20px 10px;
+  font-size: 28px; font-weight: normal; letter-spacing: 4px; font-family: Georgia, serif;
+}
+.titulo-secao::after {
+  content: ""; display: block; width: 60px; height: 2px;
+  background: #c0392b; margin: 15px auto 0;
+}
+
+/* PRATELEIRA */
+.prateleira {
+  max-width: 1300px; margin: 0 auto; padding: 40px 30px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 30px;
+}
+.livro {
+  background: #0a0a0a; border-radius: 6px; overflow: hidden;
+  border: 1px solid #1a1a1a; transition: 0.3s;
+  display: flex; flex-direction: column;
+}
+.livro:hover {
+  transform: translateY(-8px); border-color: #c0392b;
+  box-shadow: 0 20px 40px rgba(192,57,43,0.3);
+}
+.livro .capa { width: 100%; height: 300px; object-fit: cover; display: block; background: #111; }
+.livro-info { padding: 18px 16px 20px; display: flex; flex-direction: column; flex: 1; }
+.livro-info h3 { font-size: 17px; margin-bottom: 6px; line-height: 1.3; }
+.livro-info .cat-tag {
+  font-size: 11px; color: #c0392b; letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.livro-info .desc {
+  font-size: 12px; color: #888; line-height: 1.4; margin-bottom: 12px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.btn-ler {
+  background: #27ae60; color: #fff; border: none;
+  padding: 11px; border-radius: 4px; cursor: pointer;
+  font-size: 13px; font-weight: bold; letter-spacing: 2px;
+  text-transform: uppercase; margin-top: auto; transition: 0.3s;
+}
+.btn-ler:hover { background: #219150; }
+.btn-excluir {
+  background: transparent; color: #e74c3c; border: 1px solid #e74c3c;
+  padding: 5px; border-radius: 3px; cursor: pointer;
+  font-size: 11px; margin-top: 6px;
+}
+.btn-excluir:hover { background: #e74c3c; color: #fff; }
+
+/* VAZIO */
+.vazio { grid-column: 1 / -1; text-align: center; padding: 100px 20px; }
+.vazio .icone { font-size: 80px; margin-bottom: 20px; opacity: 0.4; }
+.vazio h3 {
+  font-size: 22px; color: #c0392b; font-weight: normal;
+  letter-spacing: 3px; margin-bottom: 12px; font-family: Georgia, serif;
+}
+.vazio p { font-size: 14px; color: #555; letter-spacing: 1px; }
+
+/* MODAIS */
+.modal {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.92); z-index: 200;
+  justify-content: center; align-items: center; padding: 20px; overflow-y: auto;
+}
+.modal.ativo { display: flex; }
+.modal-box {
+  background: #0a0a0a; padding: 35px 30px; border-radius: 8px;
+  max-width: 450px; width: 100%; max-height: 92vh; overflow-y: auto;
+  position: relative; border: 1px solid #1a1a1a; border-top: 3px solid #c0392b; margin: auto;
+}
+.fechar {
+  position: absolute; top: 12px; right: 18px;
+  font-size: 30px; cursor: pointer; color: #666; line-height: 1;
+}
+.fechar:hover { color: #c0392b; }
+.modal-box h2 {
+  text-align: center; margin-bottom: 25px;
+  font-weight: normal; letter-spacing: 2px; font-size: 22px; font-family: Georgia, serif;
+}
+
+/* FORM */
+.campo {
+  width: 100%; padding: 12px 14px; margin-bottom: 14px;
+  background: #000; color: #fff; border: 1px solid #2a2a2a;
+  border-radius: 4px; font-size: 14px;
+}
+.campo:focus { outline: none; border-color: #c0392b; }
+textarea.campo { resize: vertical; min-height: 80px; }
+label.campo-label {
+  display: block; font-size: 12px; color: #888;
+  margin-bottom: 6px; letter-spacing: 0.5px;
+}
+.preview-capa { margin-bottom: 14px; text-align: center; display: none; }
+.preview-capa.ativo { display: block; }
+.preview-capa img { max-width: 140px; max-height: 200px; border-radius: 6px; border: 2px solid #c0392b; object-fit: cover; }
+.preview-capa p { font-size: 11px; color: #666; margin-top: 8px; letter-spacing: 1px; }
+.arquivo-info {
+  background: #001a00; border: 1px solid #27ae60;
+  padding: 8px 12px; border-radius: 4px; font-size: 12px;
+  color: #27ae60; margin-top: -8px; margin-bottom: 14px;
+  display: none; word-break: break-all;
+}
+.arquivo-info.ativo { display: block; }
+
+/* LEITOR (PDF / HTML) */
+.leitor-box {
+  max-width: 900px !important;
+  width: 95% !important;
+  padding: 0 !important;
+  border-top: none !important;
+  overflow: hidden !important;
+  background: #1a1a1a !important;
+}
+.leitor-header {
+  background: #111;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #c0392b;
+}
+.leitor-header h3 {
+  font-size: 16px;
+  color: #fff;
+  font-family: Georgia, serif;
+  letter-spacing: 1px;
+}
+.leitor-conteudo {
+  background: #222;
+  max-height: 78vh;
+  overflow-y: auto;
+  position: relative;
+}
+.pdf-canvas-wrapper {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+.pdf-canvas-wrapper canvas {
+  max-width: 100%;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  background: #fff;
+  border-radius: 4px;
+}
+.pdf-controles {
+  background: #111;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  border-top: 1px solid #333;
+  flex-wrap: wrap;
+}
+.pdf-controles button {
+  background: #c0392b; color: #fff; border: none;
+  padding: 8px 16px; border-radius: 4px;
+  cursor: pointer; font-size: 13px; font-weight: bold;
+}
+.pdf-controles button:hover { background: #e74c3c; }
+.pdf-controles button:disabled { background: #333; color: #666; cursor: not-allowed; }
+.pdf-controles .pagina-info { color: #fff; font-size: 13px; min-width: 100px; text-align: center; }
+.pdf-zoom-info { color: #888; font-size: 12px; margin-left: 10px; }
+.html-frame { width: 100%; height: 78vh; border: none; background: #fff; }
+
+.aviso {
+  background: #1a0000; border: 1px solid #c0392b;
+  padding: 10px; border-radius: 4px; font-size: 12px;
+  color: #ff6b6b; margin-bottom: 15px; text-align: center;
+}
+
+/* FOOTER */
+footer {
+  text-align: center; padding: 40px 20px;
+  border-top: 1px solid #1a1a1a; color: #666;
+  font-size: 13px; letter-spacing: 1px; margin-top: 60px;
+}
+footer b { color: #c0392b; }
+
+/* MOBILE */
+@media (max-width: 600px) {
+  header { padding: 14px 20px; }
+  .categorias { padding: 12px 20px; }
+  .banner { padding: 50px 20px; }
+  .banner h1 { font-size: 30px; letter-spacing: 2px; }
+  .prateleira { padding: 30px 20px; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .livro .capa { height: 220px; }
+  .header-right .btn { padding: 8px 12px; font-size: 11px; }
+  .leitor-box { width: 98% !important; }
+  .leitor-header h3 { font-size: 13px; }
+  .pdf-controles { gap: 8px; padding: 10px; }
+  .pdf-controles button { padding: 6px 10px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" onclick="mostrarTudo()">Dark<b>Livros</b></div>
+  <div class="header-right">
+    <button class="btn btn-admin" onclick="abrirAdmin()">🔒 Admin</button>
+  </div>
+</header>
+
+<div class="categorias" id="categorias"></div>
+
+<div class="banner">
+  <h1>Bem-vindo à <i>DarkLivros</i></h1>
+  <p>A sua livraria digital — leia aqui mesmo</p>
+</div>
+
+<h2 class="titulo-secao" id="tituloSecao">TODOS OS LIVROS</h2>
+<div class="prateleira" id="prateleira"></div>
+
+<footer>© 2025 <b>DarkLivros</b> — Todos os direitos reservados</footer>
+
+<!-- MODAL LOGIN -->
+<div class="modal" id="modalLogin">
+  <div class="modal-box">
+    <span class="fechar" onclick="fechar('modalLogin')">&times;</span>
+    <h2>Acesso Restrito</h2>
+    <div class="aviso">🔒 Apenas o administrador pode postar livros</div>
+    <input type="password" id="senhaAdmin" class="campo" placeholder="Digite a senha de admin">
+    <button class="btn" style="width:100%" onclick="verificarSenha()">Entrar</button>
+  </div>
+</div>
+
+<!-- MODAL ADMIN -->
+<div class="modal" id="modalAdmin">
+  <div class="modal-box">
+    <span class="fechar" onclick="fechar('modalAdmin')">&times;</span>
+    <h2>📤 Postar Novo Livro</h2>
+
+    <label class="campo-label">NOME DO LIVRO</label>
+    <input type="text" id="titulo" class="campo" placeholder="Ex: Dom Casmurro">
+
+    <label class="campo-label">DESCRIÇÃO</label>
+    <textarea id="descricao" class="campo" placeholder="Sobre o que é o livro..."></textarea>
+
+    <label class="campo-label">CATEGORIA</label>
+    <select id="categoria" class="campo">
+      <option value="Ficção">Ficção</option>
+      <option value="Romance">Romance</option>
+      <option value="Técnico">Técnico</option>
+      <option value="Infantil">Infantil</option>
+      <option value="Biografia">Biografia</option>
+      <option value="Suspense">Suspense</option>
+      <option value="Fantasia">Fantasia</option>
+      <option value="Terror">Terror</option>
+    </select>
+
+    <label class="campo-label">CAPA (importar do dispositivo)</label>
+    <input type="file" id="capa" class="campo" accept="image/*" onchange="previewCapa(event)">
+
+    <div class="preview-capa" id="previewCapa">
+      <img id="imgPreview" src="" alt="Preview">
+      <p>PRÉ-VISUALIZAÇÃO DA CAPA</p>
+    </div>
+
+    <label class="campo-label">ARQUIVO DO LIVRO (PDF ou HTML)</label>
+    <input type="file" id="arquivoLivro" class="campo" accept=".pdf,.html,.htm" onchange="infoArquivo(event)">
+    <div class="arquivo-info" id="arquivoInfo"></div>
+
+    <button class="btn" style="width:100%;margin-top:10px" onclick="postarLivro()">📚 PUBLICAR LIVRO</button>
+    <button class="btn btn-admin" style="width:100%;margin-top:8px" onclick="fechar('modalAdmin')">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL LEITOR -->
+<div class="modal" id="modalLeitor">
+  <div class="modal-box leitor-box">
+    <div class="leitor-header">
+      <h3 id="leitorTitulo">📖 Leitor</h3>
+      <button class="btn btn-admin" onclick="fecharLeitor()">✕ Fechar</button>
+    </div>
+    <div class="leitor-conteudo" id="leitorConteudo"></div>
+    <div class="pdf-controles" id="pdfControles" style="display:none;">
+      <button id="btnPrev" onclick="paginaAnterior()">◀ Anterior</button>
+      <span class="pagina-info" id="paginaInfo">Página 1 / 1</span>
+      <button id="btnNext" onclick="proximaPagina()">Próxima ▶</button>
+      <button onclick="zoomOut()">− Zoom</button>
+      <span class="pdf-zoom-info" id="zoomInfo">100%</span>
+      <button onclick="zoomIn()">+ Zoom</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================================
+// CONFIGURAÇÕES
+// =========================================================
+var SENHA_ADMIN = "admin123";
+
+// Configurar PDF.js
+if (typeof pdfjsLib !== "undefined") {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+// =========================================================
+// ESTADO
+// =========================================================
+var livros = [];
+var categoriaAtual = "todos";
+
+// PDF
+var pdfAtual = null;
+var pdfPagina = 1;
+var pdfTotalPaginas = 0;
+var pdfEscala = 1.2;
+var pdfRenderTask = null;
+
+// =========================================================
+// CATEGORIAS
+// =========================================================
+function renderizarCategorias() {
+  var cats = ["todos"];
+  for (var i = 0; i < livros.length; i++) {
+    if (cats.indexOf(livros[i].categoria) === -1) cats.push(livros[i].categoria);
+  }
+  var html = "";
+  for (var j = 0; j < cats.length; j++) {
+    var c = cats[j];
+    var ativo = (categoriaAtual === c) ? "ativo" : "";
+    var label = (c === "todos") ? "📚 TODOS" : c.toUpperCase();
+    html += '<button class="cat-btn ' + ativo + '" onclick="filtrar(\'' + c + '\')">' + label + '</button>';
+  }
+  document.getElementById("categorias").innerHTML = html;
+}
+
+// =========================================================
+// RENDER LIVROS
+// =========================================================
+function renderizar() {
+  var lista = [];
+  if (categoriaAtual === "todos") { lista = livros; }
+  else {
+    for (var k = 0; k < livros.length; k++) {
+      if (livros[k].categoria === categoriaAtual) lista.push(livros[k]);
+    }
+  }
+
+  document.getElementById("tituloSecao").textContent =
+    categoriaAtual === "todos" ? "TODOS OS LIVROS" : categoriaAtual.toUpperCase();
+
+  if (livros.length === 0) {
+    document.getElementById("prateleira").innerHTML =
+      '<div class="vazio"><div class="icone">📚</div><h3>NÃO HÁ NADA AQUI</h3>' +
+      '<p>Os livros publicados aparecerão nesta vitrine.</p></div>';
+    return;
+  }
+  if (lista.length === 0) {
+    document.getElementById("prateleira").innerHTML =
+      '<div class="vazio"><div class="icone">📚</div><h3>NÃO HÁ NADA AQUI</h3>' +
+      '<p>Nenhum livro nesta categoria.</p></div>';
+    return;
+  }
+
+  var html = "";
+  for (var i = 0; i < lista.length; i++) {
+    var l = lista[i];
+    html += '<div class="livro">' +
+      '<img class="capa" src="' + l.capa + '" alt="' + l.titulo + '" onerror="this.src=\'https://via.placeholder.com/300x400/000000/c0392b?text=Sem+Capa\'">' +
+      '<div class="livro-info">' +
+        '<h3>' + l.titulo + '</h3>' +
+        '<p class="cat-tag">' + l.categoria + '</p>' +
+        '<p class="desc">' + (l.descricao || "Sem descrição.") + '</p>' +
+        '<button class="btn-ler" onclick="abrirLeitorPorId(' + l.id + ')">📖 Ler</button>' +
+        '<button class="btn-excluir" onclick="excluirLivro(' + l.id + ')">🗑 Excluir</button>' +
+      '</div></div>';
+  }
+  document.getElementById("prateleira").innerHTML = html;
+}
+
+function filtrar(cat) { categoriaAtual = cat; renderizarCategorias(); renderizar(); }
+function mostrarTudo() { filtrar("todos"); }
+
+function excluirLivro(id) {
+  if (!confirm("Tem certeza que deseja excluir este livro?")) return;
+  var novo = [];
+  for (var i = 0; i < livros.length; i++) {
+    if (livros[i].id !== id) novo.push(livros[i]);
+  }
+  livros = novo;
+  renderizarCategorias();
+  renderizar();
+}
+
+// =========================================================
+// ADMIN
+// =========================================================
+function abrirAdmin() {
+  document.getElementById("senhaAdmin").value = "";
+  document.getElementById("modalLogin").classList.add("ativo");
+}
+
+function verificarSenha() {
+  var senha = document.getElementById("senhaAdmin").value;
+  if (senha === SENHA_ADMIN) {
+    fechar("modalLogin");
+    document.getElementById("modalAdmin").classList.add("ativo");
+  } else { alert("❌ Senha incorreta!"); }
+}
+
+function previewCapa(event) {
+  var file = event.target.files[0];
+  var previewBox = document.getElementById("previewCapa");
+  var imgPreview = document.getElementById("imgPreview");
+  if (file) {
+    var reader = new FileReader();
+    reader.onload = function (e) { imgPreview.src = e.target.result; previewBox.classList.add("ativo"); };
+    reader.readAsDataURL(file);
+  } else { previewBox.classList.remove("ativo"); }
+}
+
+function infoArquivo(event) {
+  var file = event.target.files[0];
+  var info = document.getElementById("arquivoInfo");
+  if (file) {
+    var tamanho = (file.size / 1024).toFixed(1) + " KB";
+    info.textContent = "✅ " + file.name + " (" + tamanho + ")";
+    info.classList.add("ativo");
+  } else {
+    info.classList.remove("ativo");
+    info.textContent = "";
+  }
+}
+
+function postarLivro() {
+  var titulo = document.getElementById("titulo").value.trim();
+  var descricao = document.getElementById("descricao").value.trim();
+  var categoria = document.getElementById("categoria").value;
+  var capaInput = document.getElementById("capa");
+  var arquivoInput = document.getElementById("arquivoLivro");
+
+  if (!titulo || !descricao) { alert("⚠️ Preencha o nome e a descrição!"); return; }
+  if (!arquivoInput.files || !arquivoInput.files[0]) { alert("⚠️ Selecione o arquivo do livro!"); return; }
+
+  var arquivo = arquivoInput.files[0];
+  var nomeArquivo = arquivo.name.toLowerCase();
+  var tipo = "desconhecido";
+  if (nomeArquivo.endsWith(".pdf")) tipo = "pdf";
+  else if (nomeArquivo.endsWith(".html") || nomeArquivo.endsWith(".htm")) tipo = "html";
+  else { alert("⚠️ Formato não suportado. Use PDF ou HTML."); return; }
+
+  var finalizar = function (capaUrl, arquivoUrl) {
+    livros.push({
+      id: Date.now(),
+      titulo: titulo,
+      descricao: descricao,
+      categoria: categoria,
+      capa: capaUrl,
+      arquivo: arquivoUrl,
+      tipoArquivo: tipo
+    });
+
+    document.getElementById("titulo").value = "";
+    document.getElementById("descricao").value = "";
+    document.getElementById("capa").value = "";
+    document.getElementById("arquivoLivro").value = "";
+    document.getElementById("previewCapa").classList.remove("ativo");
+    document.getElementById("arquivoInfo").classList.remove("ativo");
+
+    categoriaAtual = "todos";
+    renderizarCategorias();
+    renderizar();
+    fechar("modalAdmin");
+    alert('✅ Livro "' + titulo + '" publicado!');
+  };
+
+  var lerCapa = function (callback) {
+    if (capaInput.files && capaInput.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function (e) { callback(e.target.result); };
+      reader.readAsDataURL(capaInput.files[0]);
+    } else {
+      callback("https://via.placeholder.com/300x400/000000/c0392b?text=" + encodeURIComponent(titulo));
+    }
+  };
+
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    lerCapa(function (capaUrl) {
+      finalizar(capaUrl, e.target.result);
+    });
+  };
+  reader.readAsDataURL(arquivo);
+}
+
+// =========================================================
+// LEITOR
+// =========================================================
+function abrirLeitorPorId(id) {
+  var livro = null;
+  for (var i = 0; i < livros.length; i++) {
+    if (livros[i].id === id) livro = livros[i];
+  }
+  if (!livro) return;
+  abrirLeitor(livro);
+}
+
+function abrirLeitor(livro) {
+  document.getElementById("leitorTitulo").textContent = "📖 " + livro.titulo;
+
+  var conteudo = document.getElementById("leitorConteudo");
+  conteudo.innerHTML = "";
+  document.getElementById("pdfControles").style.display = "none";
+
+  if (!livro.arquivo) {
+    conteudo.innerHTML = '<div style="padding:40px;text-align:center;color:#888;">Arquivo não disponível.</div>';
+    document.getElementById("modalLeitor").classList.add("ativo");
+    return;
+  }
+
+  if (livro.tipoArquivo === "pdf") abrirPdf(livro.arquivo);
+  else if (livro.tipoArquivo === "html") abrirHtml(livro.arquivo);
+
+  document.getElementById("modalLeitor").classList.add("ativo");
+}
+
+function fecharLeitor() {
+  document.getElementById("modalLeitor").classList.remove("ativo");
+  document.getElementById("leitorConteudo").innerHTML = "";
+  if (pdfRenderTask) { try { pdfRenderTask.cancel(); } catch(e) {} pdfRenderTask = null; }
+  pdfAtual = null;
+  pdfPagina = 1;
+}
+
+// ------ PDF ------
+function abrirPdf(dataUrl) {
+  var conteudo = document.getElementById("leitorConteudo");
+  conteudo.innerHTML = '<div class="pdf-canvas-wrapper" id="pdfWrapper">' +
+    '<div style="color:#888;padding:40px;">Carregando PDF...</div></div>';
+
+  var base64 = dataUrl.split(",")[1];
+  var binario = atob(base64);
+  var bytes = new Uint8Array(binario.length);
+  for (var i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+
+  pdfjsLib.getDocument({ data: bytes }).promise.then(function (pdf) {
+    pdfAtual = pdf;
+    pdfTotalPaginas = pdf.numPages;
+    pdfPagina = 1;
+    pdfEscala = 1.2;
+    document.getElementById("pdfControles").style.display = "flex";
+    renderizarPaginaPdf();
+  }).catch(function (err) {
+    console.error(err);
+    conteudo.innerHTML = '<div style="padding:40px;text-align:center;color:#c0392b;">❌ Erro ao carregar PDF.</div>';
+  });
+}
+
+function renderizarPaginaPdf() {
+  if (!pdfAtual) return;
+  if (pdfRenderTask) { try { pdfRenderTask.cancel(); } catch(e) {} pdfRenderTask = null; }
+
+  pdfAtual.getPage(pdfPagina).then(function (page) {
+    var viewport = page.getViewport({ scale: pdfEscala });
+    var wrapper = document.getElementById("pdfWrapper");
+    if (!wrapper) return;
+    wrapper.innerHTML = "";
+
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    wrapper.appendChild(canvas);
+
+    var renderContext = { canvasContext: ctx, viewport: viewport };
+    pdfRenderTask = page.render(renderContext);
+    pdfRenderTask.promise.then(function () {
+      pdfRenderTask = null;
+      document.getElementById("paginaInfo").textContent = "Página " + pdfPagina + " / " + pdfTotalPaginas;
+      document.getElementById("zoomInfo").textContent = Math.round(pdfEscala / 1.2 * 100) + "%";
+      document.getElementById("btnPrev").disabled = (pdfPagina <= 1);
+      document.getElementById("btnNext").disabled = (pdfPagina >= pdfTotalPaginas);
+    }).catch(function (err) {
+      if (err && err.name !== "RenderingCancelledException") console.error(err);
+    });
+  });
+}
+
+function proximaPagina() {
+  if (pdfPagina < pdfTotalPaginas) { pdfPagina++; renderizarPaginaPdf(); document.getElementById("leitorConteudo").scrollTop = 0; }
+}
+function paginaAnterior() {
+  if (pdfPagina > 1) { pdfPagina--; renderizarPaginaPdf(); document.getElementById("leitorConteudo").scrollTop = 0; }
+}
+function zoomIn() { if (pdfEscala < 3) { pdfEscala += 0.3; renderizarPaginaPdf(); } }
+function zoomOut() { if (pdfEscala > 0.5) { pdfEscala -= 0.3; if (pdfEscala < 0.5) pdfEscala = 0.5; renderizarPaginaPdf(); } }
+
+// ------ HTML ------
+function abrirHtml(dataUrl) {
+  var conteudo = document.getElementById("leitorConteudo");
+  conteudo.innerHTML = '<iframe class="html-frame" id="htmlFrame"></iframe>';
+
+  setTimeout(function () {
+    var frame = document.getElementById("htmlFrame");
+    if (!frame) return;
+
+    if (dataUrl.indexOf("data:text/html") === 0 || dataUrl.indexOf("data:application") === 0) {
+      var base64 = dataUrl.split(",")[1];
+      var decoded = decodeURIComponent(escape(atob(base64)));
+      var doc = frame.contentDocument || frame.contentWindow.document;
+      doc.open();
+      doc.write(decoded);
+      doc.close();
+    } else {
+      frame.src = dataUrl;
+    }
+  }, 100);
+}
+
+// =========================================================
+// MODAIS
+// =========================================================
+function fechar(id) { document.getElementById(id).classList.remove("ativo"); }
+
+// =========================================================
+// INICIALIZAÇÃO
+// =========================================================
+window.addEventListener("DOMContentLoaded", function () {
+  renderizarCategorias();
+  renderizar();
+});
+</script>
+</body>
+</html>
